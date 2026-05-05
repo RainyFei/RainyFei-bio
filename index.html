@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宋雨暘 | 數位意境空間</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@0.329.0"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=Inter:wght@400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, updateDoc, setDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // ★★★ Firebase Config (已填入) ★★★
+        const firebaseConfig = {
+            apiKey: "AIzaSyCg3quj1pTt3_uaxBLXa0yE096HcC5xkY4",
+            authDomain: "rainyfei-bio.firebaseapp.com",
+            projectId: "rainyfei-bio",
+            storageBucket: "rainyfei-bio.firebasestorage.app",
+            messagingSenderId: "672524127198",
+            appId: "1:672524127198:web:d3b032cb536a1f4f13ab4f"
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const counterElement = document.getElementById('visit-count');
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                const docRef = doc(db, "stats", "visitors_v6");
+
+                onSnapshot(docRef, (docSnap) => {
+                    if (!counterElement) return;
+                    if (docSnap.exists()) {
+                        const count = docSnap.data().count || 0;
+                        counterElement.innerText = count.toLocaleString();
+                    } else {
+                        counterElement.innerText = "0"; 
+                    }
+                }, (error) => {
+                    console.warn("Firestore access info:", error.message);
+                    if (counterElement) counterElement.innerText = "---";
+                });
+
+                const visitedKey = 'visited_v24'; 
+                if (!sessionStorage.getItem(visitedKey)) {
+                    updateDoc(docRef, { count: increment(1) })
+                        .then(() => sessionStorage.setItem(visitedKey, 'true'))
+                        .catch(async (error) => {
+                            if (error.code === 'not-found') {
+                                try {
+                                    await setDoc(docRef, { count: 1 });
+                                    sessionStorage.setItem(visitedKey, 'true');
+                                } catch (err) {}
+                            }
+                        });
+                }
+            } catch (e) {
+                if (counterElement) counterElement.innerText = "Dev";
+            }
+        });
+    </script>
+
+    <style>
+        /* ============================================================
+           核心變數系統
+           ============================================================ */
+        :root {
+            --bg-color: #eaf2ff;
+            --primary-text: #1e293b;
+            --secondary-text: #64748b;
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.85);
+            --accent-color: #3b82f6;
+            --accent-blue: #3b82f6; 
+            --color-twitch: #9146FF;
+            --color-cyber: #00f0ff;
+            --z-bg: -3;
+            --z-particles: -1;
+            --z-card: 10;
+            --z-ui: 50;
+            --z-modal: 999;
+        }
+
+        body {
+            margin: 0; padding: 0; overflow-x: hidden;
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color); min-height: 100vh; color: var(--primary-text);
+            transition: color 1.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 1.5s ease;
+            position: relative;
+        }
+
+        /* 背景與氛圍特效 */
+        .noise-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 50; opacity: 0.05; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E"); }
+        .mist-container { position: fixed; inset: 0; pointer-events: none; z-index: var(--z-bg); overflow: hidden; opacity: 1; transition: opacity 1.5s ease; }
+        .mist-blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.8; animation: mist-float 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1); }
+        .mist-1 { top: -10%; left: -10%; width: 80vw; height: 80vw; background: rgba(186, 230, 253, 0.4); }
+        .mist-2 { bottom: -10%; right: -10%; width: 70vw; height: 70vw; background: rgba(254, 249, 195, 0.3); animation-delay: -5s; }
+        .mist-3 { top: 40%; left: 30%; width: 60vw; height: 60vw; background: rgba(191, 219, 254, 0.3); animation-delay: -10s; }
+        @keyframes mist-float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(30px, 50px) scale(1.1); } }
+        
+        .god-rays-container { position: fixed; inset: 0; pointer-events: none; z-index: -2; overflow: hidden; transition: opacity 1.5s ease; }
+        .ray { position: absolute; top: -20%; left: 20%; width: 100px; height: 150vh; background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 80%); transform-origin: top left; filter: blur(30px); opacity: 0; animation: ray-shine 8s infinite alternate; }
+        .ray:nth-child(1) { left: 10%; transform: rotate(25deg); width: 150px; animation-duration: 9s; }
+        .ray:nth-child(2) { left: 30%; transform: rotate(20deg); width: 80px; animation-delay: 2s; }
+        @keyframes ray-shine { 0% { opacity: 0.15; transform: rotate(25deg) translateX(0); } 100% { opacity: 0.5; transform: rotate(25deg) translateX(20px); } }
+        
+        .twitch-overlay { position: fixed; inset: 0; background: radial-gradient(circle at 50% 50%, #1a1a20 0%, #050505 100%); z-index: 0; pointer-events: none; clip-path: circle(0% at var(--origin-x, 50%) var(--origin-y, 20%)); transition: clip-path 1.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        .twitch-overlay::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 30%, rgba(145, 70, 255, 0.15), transparent 70%); animation: pulse-bg 6s infinite alternate; }
+        @keyframes pulse-bg { 0% { opacity: 0.5; transform: scale(1); } 100% { opacity: 1; transform: scale(1.1); } }
+        
+        body.twitch-mode { --primary-text: #ffffff; --secondary-text: #a1a1aa; --glass-bg: rgba(15, 15, 20, 0.85); --glass-border: rgba(145, 70, 255, 0.4); --accent-color: #9146FF; }
+        body.twitch-mode .twitch-overlay { clip-path: circle(150% at var(--origin-x, 50%) var(--origin-y, 20%)); }
+        body.twitch-mode .mist-container, body.twitch-mode .god-rays-container { opacity: 0; }
+
+        .meteor-layer, .stardust-layer { position: fixed; inset: 0; pointer-events: none; z-index: var(--z-particles); transition: opacity 1.5s ease; overflow: hidden; }
+        .stardust-layer { z-index: 1; opacity: 0; }
+        body.twitch-mode .meteor-layer { opacity: 0; }
+        body.twitch-mode .stardust-layer { opacity: 1; }
+
+        .meteor { position: absolute; width: 150px; height: 1.5px; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%); transform: rotate(-45deg); opacity: 0; animation: meteor-shower linear infinite; filter: drop-shadow(0 0 1px white); }
+        .meteor::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 3px; height: 3px; background: #fff; border-radius: 50%; box-shadow: 0 0 8px 1px white; }
+        @keyframes meteor-shower { 0% { transform: translate(100px, -100px) rotate(-45deg); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translate(-800px, 800px) rotate(-45deg); opacity: 0; } }
+        .digital-particle { position: absolute; border-radius: 50%; animation: float-up linear infinite; }
+        @keyframes float-up { 0% { transform: translateY(0) scale(0.8); opacity: 0; } 20% { opacity: 1; } 80% { opacity: 0.8; } 100% { transform: translateY(-100px) scale(1.5); opacity: 0; } }
+
+        /* 個人檔案卡片與裝飾 */
+        .profile-card-container { position: relative; z-index: var(--z-card); border-radius: 3.5rem; background: var(--glass-bg); backdrop-filter: blur(30px); border: 1px solid var(--glass-border); box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.04); transition: transform 0.5s ease; }
+        .profile-border-container { position: absolute; inset: -3px; border-radius: 3.7rem; padding: 3px; background: conic-gradient(from var(--angle, 0deg), transparent 80%, rgba(59, 130, 246, 0.9) 95%, transparent 100%); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; z-index: 20; animation: border-rotate 6s linear infinite; }
+        .profile-border-container::after { content: ''; position: absolute; inset: 0; border-radius: 3.7rem; background: conic-gradient(from var(--angle-rev, 180deg), transparent 90%, rgba(59, 130, 246, 0.4) 98%, transparent 100%); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: border-rotate-rev 10s linear infinite; }
+        @property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+        @property --angle-rev { syntax: '<angle>'; initial-value: 180deg; inherits: false; }
+        @keyframes border-rotate { from { --angle: 0deg; } to { --angle: 360deg; } }
+        @keyframes border-rotate-rev { from { --angle-rev: 360deg; } to { --angle-rev: 0deg; } }
+        body.twitch-mode .profile-border-container { background: conic-gradient(from var(--angle, 0deg), transparent 70%, #9146FF 95%, transparent 100%); }
+        body.twitch-mode .profile-border-container::after { background: conic-gradient(from var(--angle-rev, 180deg), transparent 85%, rgba(0, 240, 255, 0.6) 95%, transparent 100%); }
+
+        .profile-card-container::before, .profile-card-container::after { content: ''; position: absolute; width: 20px; height: 20px; border: 2px solid transparent; transition: all 1.5s ease; opacity: 0; pointer-events: none; }
+        .profile-card-container::before { top: -2px; left: -2px; border-radius: 3rem 0 0 0; }
+        .profile-card-container::after { bottom: -2px; right: -2px; border-radius: 0 0 3rem 0; }
+        body.twitch-mode .profile-card-container::before { border-color: #00f0ff; border-top-width: 4px; border-left-width: 4px; opacity: 1; box-shadow: -2px -2px 10px rgba(0, 240, 255, 0.5); }
+        body.twitch-mode .profile-card-container::after { border-color: #9146FF; border-bottom-width: 4px; border-right-width: 4px; opacity: 1; box-shadow: 2px 2px 10px rgba(145, 70, 255, 0.5); }
+
+        .avatar-container { position: relative; width: 140px; height: 140px; margin: 0 auto 1.5rem auto; cursor: pointer; }
+        .glow-ring { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; transform: translate(-50%, -50%); border-radius: 50%; box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.4); animation: breathe-blue 3s ease-in-out infinite; z-index: -1; }
+        body.twitch-mode .glow-ring { box-shadow: 0 0 40px 15px rgba(145, 70, 255, 0.6); animation: breathe-purple 2s ease-in-out infinite; }
+        @keyframes breathe-blue { 0%, 100% { box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.3); transform: translate(-50%, -50%) scale(1); } 50% { box-shadow: 0 0 45px 12px rgba(59, 130, 246, 0.6); transform: translate(-50%, -50%) scale(1.08); } }
+        @keyframes breathe-purple { 0%, 100% { box-shadow: 0 0 30px 10px rgba(145, 70, 255, 0.4); transform: translate(-50%, -50%) scale(1.05); } 50% { box-shadow: 0 0 60px 20px rgba(145, 70, 255, 0.7); transform: translate(-50%, -50%) scale(1.15); } }
+
+        .twitch-spark { position: absolute; top: 50%; left: 50%; width: 14px; height: 14px; color: #9146FF; pointer-events: none; opacity: 0; z-index: -1; transform: translate(-50%, -50%) scale(0); }
+        .spark-1 { animation: spark-1 3s ease-out infinite; } .spark-2 { animation: spark-2 3s ease-out infinite 1s; } .spark-3 { animation: spark-3 3s ease-out infinite 2s; }
+        @keyframes spark-1 { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 20% { opacity: 0.8; } 100% { transform: translate(-40px, -35px) scale(1) rotate(-20deg); opacity: 0; } }
+        @keyframes spark-2 { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 20% { opacity: 0.8; } 100% { transform: translate(35px, -40px) scale(0.8) rotate(20deg); opacity: 0; } }
+        @keyframes spark-3 { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 20% { opacity: 0.8; } 100% { transform: translate(-10px, -50px) scale(0.9) rotate(0deg); opacity: 0; } }
+
+        .mode-toggle-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: auto; padding: 0.6rem 1.5rem; margin: 0 auto 1.5rem auto; border-radius: 9999px; background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-size: 0.85rem; font-weight: 700; color: var(--primary-text); cursor: pointer; z-index: 50; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); backdrop-filter: blur(8px); position: relative; overflow: visible; }
+        .mode-toggle-btn::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 9999px; border: 2px solid var(--accent-color); width: 100%; height: 100%; animation: radar-pulse 2s infinite; opacity: 0; pointer-events: none; }
+        @keyframes radar-pulse { 0% { width: 100%; height: 100%; opacity: 0.8; border-width: 2px; } 100% { width: 140%; height: 150%; opacity: 0; border-width: 0px; } }
+        .mode-toggle-btn:hover { transform: scale(1.05); box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2); background: rgba(255, 255, 255, 0.9); }
+        body.twitch-mode .mode-toggle-btn { background: rgba(20, 20, 30, 0.6); border-color: #9146FF; color: #00f0ff; box-shadow: 0 0 15px rgba(145, 70, 255, 0.3); }
+        body.twitch-mode .mode-toggle-btn::before { border-color: #9146FF; }
+
+        .avatar-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; border: 4px solid white; transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        body.twitch-mode .avatar-frame { border-color: #9146FF; box-shadow: 0 0 15px rgba(145, 70, 255, 0.5); }
+        .avatar-main { opacity: 1; transform: scale(1); z-index: 10; transition: all 0.8s ease; }
+        .avatar-alt { opacity: 0; transform: scale(0.9); z-index: 20; background-color: #9146FF; transition: all 0.8s ease; }
+        body.twitch-mode .avatar-main { opacity: 0; transform: scale(0.9); }
+        body.twitch-mode .avatar-alt { opacity: 1; transform: scale(1); }
+        .twitch-badge { position: absolute; bottom: 5px; right: 5px; width: 36px; height: 36px; background: #9146FF; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 3px solid white; box-shadow: 0 4px 10px rgba(145, 70, 255, 0.3); z-index: 30; opacity: 0; transition: all 0.8s ease; }
+        body.twitch-mode .twitch-badge { opacity: 1; }
+
+        .name-morph-container { position: relative; height: 3.5rem; display: flex; justify-content: center; align-items: center; overflow: hidden; margin-bottom: 1rem; }
+        .name-text { position: absolute; width: 100%; text-align: center; font-weight: 900; font-size: 2.25rem; letter-spacing: -0.02em; transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .name-real { color: var(--primary-text); transform: translateY(0); opacity: 1; filter: blur(0); }
+        .name-virtual { color: #fff; transform: translateY(20px); opacity: 0; filter: blur(4px); font-family: 'Share Tech Mono', monospace; }
+        body.twitch-mode .name-real { transform: translateY(-20px); opacity: 0; filter: blur(4px); }
+        body.twitch-mode .name-virtual { transform: translateY(0); opacity: 1; filter: blur(0); text-shadow: 2px 2px #9146FF, -2px -2px #00f0ff; animation: glitch-skew 1s infinite linear alternate-reverse; }
+        @keyframes glitch-skew { 0% { transform: skew(0deg); } 20% { transform: skew(-2deg); } 40% { transform: skew(2deg); } 60% { transform: skew(-1deg); } 80% { transform: skew(1deg); } 100% { transform: skew(0deg); } }
+
+        .bio-box { background-color: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.6); border-radius: 1.5rem; padding: 1rem 1.5rem; display: inline-block; transition: all 1.5s ease; position: relative; min-width: 280px; height: 3.5rem; overflow: hidden; }
+        body.twitch-mode .bio-box { background-color: rgba(145, 70, 255, 0.1); border: 1px solid rgba(145, 70, 255, 0.5); border-radius: 4px; border-left: 4px solid #9146FF; box-shadow: 0 0 15px rgba(145, 70, 255, 0.2); }
+        .bio-text { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.875rem; font-weight: 600; letter-spacing: 0.05em; transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); color: #64748b; text-transform: none; }
+        body.twitch-mode .bio-text { color: #00f0ff; font-family: 'Share Tech Mono', monospace; letter-spacing: 0.1em; }
+        .bio-real { transform: translateY(0); opacity: 1; }
+        .bio-virtual { transform: translateY(20px); opacity: 0; }
+        body.twitch-mode .bio-real { transform: translateY(-20px); opacity: 0; }
+        body.twitch-mode .bio-virtual { transform: translateY(0); opacity: 1; }
+
+        .twitch-player-wrapper { width: 100%; height: 0; opacity: 0; overflow: hidden; border-radius: 2rem; margin-bottom: 0; transition: all 1s cubic-bezier(0.4, 0, 0.2, 1); background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 60; pointer-events: auto; }
+        body.twitch-mode .twitch-player-wrapper { height: 220px; opacity: 1; margin-bottom: 1.5rem; border: 1px solid #9146FF; border-radius: 8px; box-shadow: 0 0 20px rgba(145, 70, 255, 0.3); }
+
+        /* 擴展選單動畫區間 */
+        #pc-menu-expandable { width: 100%; max-width: 520px; max-height: 0; opacity: 0; overflow: hidden; transform: translateY(-20px); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        #pc-menu-expandable.expanded { max-height: 8000px; opacity: 1; transform: translateY(0); margin-top: 1.5rem; }
+        #pc-menu-expandable:not(.expanded) { max-height: 0; opacity: 0; margin-top: 0; }
+
+        .featured-link { border: 2px solid rgba(59, 130, 246, 0.2); background: rgba(255, 255, 255, 0.6); transition: all 0.5s ease; }
+        body.twitch-mode .featured-link { background: linear-gradient(90deg, rgba(145, 70, 255, 0.2), transparent); border: 1px solid #00f0ff; box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); animation: none; }
+        body.twitch-mode .featured-link > div:first-child > div { background-color: rgba(145, 70, 255, 0.2); border-color: #9146FF; }
+        body.twitch-mode .featured-link > div:first-child > div > i { color: #00f0ff; }
+        body.twitch-mode .featured-link > div:first-child > span { color: #ffffff; text-shadow: 0 0 5px rgba(255,255,255,0.5); }
+        body.twitch-mode .featured-link > div:last-child { background-color: #9146FF; color: #fff; box-shadow: 0 0 10px #9146FF; }
+
+        .glass-card { background: var(--glass-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid var(--glass-border); box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.04); transition: background 1.5s ease, border-color 1.5s ease; }
+        .glass-card span { transition: color 1.5s ease; }
+        body.twitch-mode .glass-card span.font-black { color: #ffffff !important; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        body.twitch-mode .glass-card i.text-slate-400 { color: #00f0ff !important; }
+        .btn-hover:hover { transform: translateY(-5px); background: rgba(255, 255, 255, 0.9) !important; box-shadow: 0 15px 35px rgba(59, 130, 246, 0.1); }
+        body.twitch-mode .btn-hover:hover { background: rgba(255, 255, 255, 0.1) !important; box-shadow: 0 15px 35px rgba(145, 70, 255, 0.2); }
+
+        .social-pill { transition: all 0.4s ease; max-width: 68px; overflow: hidden; background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); }
+        .social-pill .label { max-width: 0; opacity: 0; transition: all 0.3s ease; white-space: nowrap; font-weight: 800; }
+        @media (min-width: 768px) { .social-pill:hover { max-width: 200px; padding-right: 1.5rem; background: rgba(255, 255, 255, 0.95); } .social-pill:hover .label { max-width: 120px; opacity: 1; margin-left: 0.75rem; } }
+        
+        body.twitch-mode .social-pill { background: rgba(20,20,30,0.8); border-color: #9146FF; }
+        body.twitch-mode .social-pill:hover { box-shadow: 0 0 15px #9146FF; }
+        body.twitch-mode .social-pill svg, body.twitch-mode .social-pill span { transition: color 0.5s ease; }
+        body.twitch-mode .social-pill svg.text-\[\#9146FF\], body.twitch-mode .social-pill span.text-\[\#9146FF\] { color: #a970ff; text-shadow: 0 0 5px #9146FF; }
+        body.twitch-mode .social-pill svg.text-\[\#FF0000\], body.twitch-mode .social-pill span.text-\[\#FF0000\] { color: #ff4d4d; text-shadow: 0 0 5px #ff0000; }
+        body.twitch-mode .social-pill svg.text-\[\#E4405F\], body.twitch-mode .social-pill span.text-\[\#E4405F\] { color: #ff6b8b; text-shadow: 0 0 5px #e4405f; }
+        body.twitch-mode .social-pill.threads-btn svg, 
+        body.twitch-mode .social-pill.threads-btn span { color: #ffffff !important; text-shadow: 0 0 5px #ffffff; }
+
+        .tab-pill { flex: 1; padding: 1rem 0.5rem; color: var(--secondary-text); border-radius: 1.5rem; transition: all 0.4s ease; }
+        .tab-pill.active { background: white; color: var(--accent-color); box-shadow: 0 10px 20px -5px rgba(0,0,0, 0.1); transform: translateY(-4px); }
+        body.twitch-mode .tab-pill.active { background: rgba(145, 70, 255, 0.2); color: #00f0ff; border: 1px solid #00f0ff; box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        
+        .tab-pane { opacity: 0; transition: opacity 0.3s ease-in-out; }
+        .tab-pane.active { opacity: 1; }
+
+        .item-strip { display: flex; flex-direction: column; margin-bottom: 1rem; }
+        .item-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.4rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 24px; cursor: pointer; transition: all 0.3s ease; }
+        body.twitch-mode .item-header span { color: white !important; font-family: 'Share Tech Mono', monospace; }
+        body.twitch-mode .item-header .chevron { color: #00f0ff !important; }
+        body.twitch-mode .item-header { border-radius: 4px; border-color: rgba(145, 70, 255, 0.4); }
+        
+        body.twitch-mode .item-header > div > div {
+            background-color: rgba(20, 20, 30, 0.8) !important;
+            border: none !important; 
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+        }
+        body.twitch-mode .item-header > div > div > i { color: #00f0ff !important; filter: drop-shadow(0 0 2px #00f0ff); }
+        
+        .detail-panel { max-height: 0; opacity: 0; overflow: hidden; margin-top: 0; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .detail-panel.active { max-height: 2500px; opacity: 1; margin-top: 1rem; }
+        .detail-content { margin: 0 0.5rem; padding: 1.5rem; background: rgba(255, 255, 255, 0.65); backdrop-filter: blur(12px); border-radius: 28px; border: 1px solid rgba(255, 255, 255, 0.85); box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
+        body.twitch-mode .detail-content { background: rgba(20, 20, 30, 0.7); border-radius: 4px; border: 1px solid rgba(0, 240, 255, 0.3); }
+
+        .spec-main-name { display: block; font-size: 1.05rem; font-weight: 900; color: #1e293b; line-height: 1.3; border-left: 4px solid var(--accent-blue); padding-left: 0.85rem; }
+        body.twitch-mode .detail-content .spec-main-name { color: #00f0ff; border-left-color: #9146FF; text-shadow: 0 0 5px rgba(0,240,255,0.5); }
+        .spec-sub-detail { display: inline-block; font-size: 0.75rem; font-weight: 600; color: #64748b; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.7); padding: 0.3rem 0.8rem; border-radius: 12px; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+        body.twitch-mode .detail-content .spec-sub-detail { background: rgba(145, 70, 255, 0.15); border-color: rgba(145, 70, 255, 0.4); color: #a1a1aa; }
+        
+        .price-badge { display: inline-flex; align-items: center; padding: 0.4rem 1rem; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.7); color: var(--accent-color); font-size: 0.85rem; font-weight: 800; border-radius: 99px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        body.twitch-mode .detail-content .price-badge { background: rgba(0, 240, 255, 0.15); color: #00f0ff; border: 1px solid #00f0ff; box-shadow: 0 0 10px rgba(0, 240, 255, 0.2); }
+        
+        /* 已停產/無連結標籤樣式 */
+        .status-badge { display: inline-flex; align-items: center; justify-content: center; padding: 0.35rem 0.8rem; background: rgba(241, 245, 249, 0.8); border: 1px solid rgba(226, 232, 240, 0.8); color: #94a3b8; font-size: 0.75rem; font-weight: 800; border-radius: 99px; }
+        body.twitch-mode .detail-content .status-badge { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); color: #a1a1aa; }
+
+        .buy-btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.4rem 0.8rem; border-radius: 99px; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.7); color: var(--accent-color); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-decoration: none; outline: none; }
+        .buy-btn:hover { background: var(--accent-color); color: white; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(59, 130, 246, 0.3); }
+        body.twitch-mode .detail-content .buy-btn { background: rgba(0, 240, 255, 0.15); color: #00f0ff; border: 1px solid #00f0ff; box-shadow: 0 0 10px rgba(0, 240, 255, 0.2); }
+        body.twitch-mode .detail-content .buy-btn:hover { background: #00f0ff; color: #000; box-shadow: 0 0 20px rgba(0, 240, 255, 0.6); transform: translateY(-2px); }
+
+        .side-btn {
+            position: fixed;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+            padding: 12px 6px;
+            background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 20px;
+            color: #64748b; font-size: 0.75rem; font-weight: 700;
+            cursor: pointer; z-index: 900;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .side-btn span { writing-mode: vertical-lr; text-orientation: upright; letter-spacing: 2px; }
+        .side-btn:hover { background: rgba(255, 255, 255, 0.9); color: var(--accent-color); transform: scale(1.05); box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3); }
+        
+        body.twitch-mode .side-btn, body.twitch-mode .toggle-all-btn { background: rgba(20, 20, 30, 0.7); color: #00f0ff; border-color: #9146FF; box-shadow: 0 0 15px rgba(145, 70, 255, 0.3); }
+
+        .toggle-all-container { 
+            position: fixed; right: 4rem; top: 50%; transform: translateY(-50%); 
+            z-index: 900; display: block; transition: opacity 0.3s ease; 
+            opacity: 0; pointer-events: none; 
+        }
+        .toggle-all-container.show-btn { opacity: 1; pointer-events: auto; }
+
+        .back-to-top { right: 2rem; bottom: 15%; opacity: 0; pointer-events: none; transform: translateY(20px); }
+        .back-to-top.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        .back-to-top:hover { transform: scale(1.05); }
+
+        /* Modal Styles */
+        #purchase-modal, #disclaimer-modal { z-index: 9999; }
+        #modal-backdrop, #disclaimer-backdrop { transition: opacity 0.3s ease; }
+        #modal-content, #disclaimer-content { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        
+        body.twitch-mode #modal-backdrop, body.twitch-mode #disclaimer-backdrop { background-color: rgba(5, 5, 10, 0.7); }
+        body.twitch-mode #modal-content, body.twitch-mode #disclaimer-content { background-color: rgba(20, 20, 30, 0.85); border-top-color: #9146FF; box-shadow: 0 -10px 40px rgba(145, 70, 255, 0.2); }
+        body.twitch-mode #modal-content h3, body.twitch-mode #disclaimer-content h3 { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        body.twitch-mode #modal-item-name { color: #00f0ff; }
+        
+        body.twitch-mode #disclaimer-content .text-slate-600 { color: #a1a1aa; }
+        body.twitch-mode #disclaimer-content .text-slate-800 { color: #e4e4e7; }
+        body.twitch-mode #disclaimer-content .text-slate-700 { color: #d4d4d8; }
+        body.twitch-mode #disclaimer-btn-close { background: rgba(145, 70, 255, 0.1); color: #00f0ff; border: 1px solid rgba(145, 70, 255, 0.3); }
+        body.twitch-mode #disclaimer-btn-close:hover { background: rgba(145, 70, 255, 0.2); box-shadow: 0 0 15px rgba(145, 70, 255, 0.3); }
+        body.twitch-mode footer .disclaimer-link { color: rgba(0, 240, 255, 0.8) !important; }
+        body.twitch-mode footer .disclaimer-link:hover { color: #00f0ff !important; text-shadow: 0 0 8px rgba(0,240,255,0.6); }
+        body.twitch-mode #disclaimer-content .bg-blue-50\/50 { background-color: rgba(145, 70, 255, 0.1); border-color: rgba(145, 70, 255, 0.2); }
+
+        body.twitch-mode #link-shopee { background: rgba(255, 102, 0, 0.1); border-color: rgba(255, 102, 0, 0.3); color: #ff8800; text-shadow: 0 0 8px rgba(255,102,0,0.5); }
+        body.twitch-mode #link-shopee:hover { background: rgba(255, 102, 0, 0.2); box-shadow: 0 0 20px rgba(255, 102, 0, 0.4); }
+        body.twitch-mode #link-momo { background: rgba(232, 56, 140, 0.1); border-color: rgba(232, 56, 140, 0.3); color: #ff66a3; text-shadow: 0 0 8px rgba(232,56,140,0.5); }
+        body.twitch-mode #link-momo:hover { background: rgba(232, 56, 140, 0.2); box-shadow: 0 0 20px rgba(232, 56, 140, 0.4); }
+        body.twitch-mode #modal-soldout-msg { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
+        body.twitch-mode #modal-soldout-msg span, body.twitch-mode #modal-soldout-msg i { color: #a1a1aa; }
+        body.twitch-mode #modal-drag-handle { background-color: #9146FF; box-shadow: 0 0 10px #9146FF; }
+        body.twitch-mode #btn-cancel { color: #a1a1aa; }
+        body.twitch-mode #btn-cancel:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+        @media (max-width: 1024px) {
+            .side-btn, .toggle-all-btn { right: 0; border-radius: 12px 0 0 12px; padding: 12px 6px; background: rgba(255, 255, 255, 0.85); border-right: none; font-size: 0.7rem; }
+            .side-btn i, .side-btn svg { width: 18px; height: 18px; }
+            .toggle-all-btn span { margin: 0 auto; text-align: center; letter-spacing: 1px; }
+            .toggle-all-container { right: 0; top: auto; bottom: 60%; transform: none; }
+            .toggle-all-btn:hover { transform: translateX(-5px); }
+            .back-to-top { bottom: 30px; transform: translateX(5px); } 
+            .back-to-top.visible { transform: translateX(0); }
+            .back-to-top:hover { transform: translateX(-3px); }
+        }
+
+        .visitor-counter { position: relative; bottom: auto; left: auto; margin: 2rem auto 1rem auto; width: fit-content; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(10px); padding: 0.5rem 1rem; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.6); font-size: 12px; color: var(--secondary-text); font-weight: 700; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); z-index: 100; transition: all 1.5s ease; }
+        body.twitch-mode .visitor-counter { background: rgba(0, 0, 0, 0.8); border-color: #00f0ff; color: #00f0ff; font-family: 'Share Tech Mono', monospace; }
+        .visitor-counter:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.8); }
+
+        @media (max-width: 768px) { .profile-card-container { padding: 1.5rem !important; } .avatar-container { width: 112px; height: 112px; } .name-text { font-size: 1.75rem; } .glass-card.featured-link { padding: 1.25rem !important; } }
+        main.max-w-md { max-width: 28rem; }
+        @media (min-width: 1024px) {
+            main.max-w-md { max-width: 64rem !important; } 
+            .profile-card-container, .featured-link, #pc-menu-expandable, .mode-toggle-btn { max-width: 28rem; width: 100%; margin-left: auto; margin-right: auto; }
+            body.twitch-mode .twitch-player-wrapper { max-width: 1000px; height: 560px; margin: 2rem auto; }
+            @keyframes expand-player { from { height: 0; opacity: 0; margin-bottom: 0; } to { height: 560px; opacity: 1; margin-bottom: 1.5rem; } }
+        }
+
+        .equip-icon-box {
+            width: 2.8rem; height: 2.8rem;
+            display: flex; align-items: center; justify-content: center;
+            background: #ffffff; border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+            flex-shrink: 0; transition: all 0.3s ease;
+        }
+        body.twitch-mode .equip-icon-box { background-color: rgba(20, 20, 30, 0.8) !important; border: none !important; box-shadow: 0 0 12px rgba(0, 240, 255, 0.15); }
+        body.twitch-mode .equip-icon-box i { color: #00f0ff !important; filter: drop-shadow(0 0 2px #00f0ff); }
+    </style>
+</head>
+<body class="flex flex-col items-center">
+    <div class="noise-overlay"></div>
+    <div class="mist-container"><div class="mist-blob mist-1"></div><div class="mist-blob mist-2"></div><div class="mist-blob mist-3"></div></div>
+    <div class="god-rays-container"><div class="ray"></div></div>
+    <div class="twitch-overlay"></div>
+    <div class="meteor-layer" id="meteor-layer"></div>
+    <div class="stardust-layer" id="stardust-layer"></div>
+
+    <button onclick="scrollToTop()" class="side-btn back-to-top" id="top-btn" aria-label="Back to Top">
+        <i data-lucide="arrow-up" class="w-5 h-5"></i>
+        <span>TOP</span>
+    </button>
+
+    <div class="toggle-all-container" id="toggle-all-wrapper">
+        <button onclick="toggleAllItems()" class="side-btn toggle-all-btn animate-[pulse_2s_ease-in-out_infinite]" id="toggle-all-btn" aria-label="展開或收合所有項目">
+            <i data-lucide="chevrons-up-down" class="w-5 h-5 mb-1"></i>
+            <span>展開全部</span>
+        </button>
+    </div>
+
+    <main class="w-full max-w-md flex flex-col items-center px-4 md:px-6 py-8 md:py-24 z-10">
+        <div class="glass-card w-full flex flex-col items-center p-8 mb-8 md:mb-12 rounded-[3.5rem] profile-card-container group" id="profile-card">
+            
+            <div class="profile-border-container"></div>
+            <div class="avatar-container" id="avatar-trigger">
+                <div class="glow-ring"></div>
+                <img src="profile.png" alt="Profile" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=RainyDay';" class="avatar-frame avatar-main object-cover" style="border-radius: 50%; object-fit: cover;">
+                <img src="profile_twitch.png" alt="Twitch Avatar" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=TwitchStreamer';" class="avatar-frame avatar-alt object-cover" style="border-radius: 50%; object-fit: cover;">
+                <div class="twitch-badge"><i data-lucide="twitch" class="w-5 h-5"></i></div>
+            </div>
+            <div class="text-center w-full">
+                <div class="name-morph-container"><span class="name-text name-real">宋雨暘</span><span class="name-text name-virtual">雨紛霏</span></div>
+                <div class="bio-box"><p class="bio-text bio-real">Lifestyle｜Writing｜Travel｜Daily</p><p class="bio-text bio-virtual">聽雨，看配備，享受生活。</p></div>
+            </div>
+        </div>
+
+        <div class="w-full space-y-4 z-10 flex flex-col items-center">
+            <button id="mode-btn" class="mode-toggle-btn" aria-label="Switch Mode">
+                <span class="mode-text">戳一下試試看？</span>
+                <i data-lucide="twitch" class="twitch-spark spark-1"></i>
+                <i data-lucide="twitch" class="twitch-spark spark-2"></i>
+                <i data-lucide="twitch" class="twitch-spark spark-3"></i>
+            </button>
+
+            <div class="twitch-player-wrapper" id="twitch-player-area"><div id="twitch-embed" class="w-full h-full"></div></div>
+            
+            <div onclick="toggleMenu()" class="glass-card featured-link btn-hover flex items-center justify-between p-7 rounded-[2.5rem] w-full cursor-pointer">
+                <div class="flex items-center">
+                    <div class="bg-blue-500/10 p-4 rounded-2xl mr-5 border border-blue-200 transition-colors duration-1000"><i data-lucide="monitor" class="text-blue-600 w-7 h-7 transition-colors duration-1000"></i></div>
+                    <span class="font-black text-xl text-slate-700">我的電腦菜單</span>
+                </div>
+                <div class="bg-blue-500 text-white p-1.5 rounded-full shadow-lg transition-transform duration-500" id="menu-arrow" style="transform: rotate(0deg);"><i data-lucide="chevron-down" class="w-5 h-5"></i></div>
+            </div>
+
+            <div id="pc-menu-expandable" class="flex flex-col items-center w-full max-w-[520px]">
+                <div class="w-full flex p-1.5 bg-white/30 backdrop-blur-2xl border border-white/40 rounded-[30px] shadow-sm transition-colors duration-1000 mt-6 mb-6 max-w-[520px]">
+                    <button onclick="showTab('pc')" id="tab-pc" class="tab-pill active flex flex-col items-center"><i data-lucide="cpu" class="w-6 h-6 mb-1"></i><span class="text-sm font-bold">核心主機</span></button>
+                    <button onclick="showTab('peri')" id="tab-peri" class="tab-pill flex flex-col items-center"><i data-lucide="mouse" class="w-6 h-6 mb-1"></i><span class="text-sm font-bold">操控周邊</span></button>
+                    <button onclick="showTab('env')" id="tab-env" class="tab-pill flex flex-col items-center"><i data-lucide="home" class="w-6 h-6 mb-1"></i><span class="text-sm font-bold">空間環境</span></button>
+                </div>
+
+                <!-- ==============================================================
+                     1. 核心主機清單 (PC)
+                     ============================================================== -->
+                <div id="pane-pc" class="tab-pane active w-full max-w-[520px]">
+                    
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('pc-cpu', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-blue-500"><i data-lucide="cpu"></i></div>
+                                <span class="font-black text-slate-700">處理器 CPU</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="pc-cpu" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <div class="flex-1 min-w-0"><span class="spec-main-name">AMD Ryzen™ 7 7700</span></div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="price-badge">NT$ 7,390</div>
+                                        <button onclick="openPurchaseModal('AMD Ryzen™ 7 7700', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy81cTNzTVRCcHBl', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL2ZNYll4S2d5')" class="buy-btn">
+                                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <span class="spec-sub-detail">8核心 / 16執行緒 / 65W 高效能運算</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('pc-gpu', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-indigo-500"><i data-lucide="component"></i></div>
+                                <span class="font-black text-slate-700">顯示卡 GPU</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="pc-gpu" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <div class="flex-1 min-w-0"><span class="spec-main-name">GIGABYTE RTX 5070 AERO OC 12G</span></div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="price-badge">NT$ 24,990</div>
+                                        <button onclick="openPurchaseModal('GIGABYTE RTX 5070 AERO OC 12G', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy81cTNzTVhzOURZ', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL0hPaHlCZ00x')" class="buy-btn">
+                                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <span class="spec-sub-detail">12GB GDDR6X / AI 加速 / 白色</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('pc-mb', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-slate-500"><i data-lucide="layers"></i></div>
+                                <span class="font-black text-slate-700">主機板 MB</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="pc-mb" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <div class="flex-1 min-w-0"><span class="spec-main-name">ASUS ROG STRIX B850-A GAMING WIFI</span></div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="price-badge">NT$ 7,990</div>
+                                        <button onclick="openPurchaseModal('ASUS ROG STRIX B850-A GAMING WIFI', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy83ZlZXWHdCcWxs', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL1VsSTJDS0pn')" class="buy-btn">
+                                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <span class="spec-sub-detail">DDR5 / PCIe 5.0 支援 / 白色</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('pc-ram', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-blue-400"><i data-lucide="database"></i></div>
+                                <span class="font-black text-slate-700">記憶體 RAM</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="pc-ram" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <div class="flex-1 min-w-0"><span class="spec-main-name">ADATA XPG LANCER BLADE RGB</span></div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="price-badge">NT$ 3,599</div>
+                                        <button onclick="openPurchaseModal('ADATA XPG LANCER BLADE RGB', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy82cHdQWVV5aUVy', '')" class="buy-btn">
+                                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <span class="spec-sub-detail">DDR5-6000 CL30 / 16Gx2 / 白色</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('pc-ssd', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-slate-600"><i data-lucide="hard-drive"></i></div>
+                                <span class="font-black text-slate-700">儲存裝置 SSD</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="pc-ssd" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <div class="flex-1 min-w-0"><span class="spec-main-name">WD_BLACK SN850X 2TB</span></div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="price-badge">NT$ 4,390</div>
+                                        <button onclick="openPurchaseModal('WD_BLACK SN850X 2TB', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy84MDhNd2JWUjhF', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL1o5a0pnMGZ2')" class="buy-btn">
+                                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <span class="spec-sub-detail">M.2 NVMe PCIe Gen4 / 最高速 7300MB/s</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('pc-aio', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-cyan-500"><i data-lucide="droplets"></i></div>
+                                <span class="font-black text-slate-700">水冷散熱 AIO</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="pc-aio" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <div class="flex-1 min-w-0"><span class="spec-main-name">Lian Li Hydroshift II LCD-C 360TL</span></div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="price-badge">NT$ 7,499</div>
+                                        <button onclick="openPurchaseModal('Lian Li Hydroshift II LCD-C 360TL', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy84S2xETE1INzgz', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL09oYlVQR00z')" class="buy-btn">
+                                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <span class="spec-sub-detail">360mm / 內建 LCD 監測螢幕 / 白色</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('pc-fans', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-blue-300"><i data-lucide="wind"></i></div>
+                                <span class="font-black text-slate-700">系統風扇 Fans</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="pc-fans" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="mb-4">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">UNI FAN TL LCD 120mm 反向</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 4,499</div>
+                                            <button onclick="openPurchaseModal('UNI FAN TL LCD 120mm 反向', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy8xcVhqYlJqYVk0', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL3RXVURseXFq')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">內建 LCD 螢幕 / 側進氣 / 3 顆裝 / 白色</span>
+                                </div>
+                                <div class="pt-4 border-t border-slate-200/50">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">UNI FAN TL LCD 120mm</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 1,399</div>
+                                            <button onclick="openPurchaseModal('UNI FAN TL LCD 120mm', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy8xcVhqYlJqYVk0', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL0Y3cXFpM2Za')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">內建 LCD 螢幕 / 後排氣 / 白色</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('pc-psu', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-yellow-600"><i data-lucide="zap"></i></div>
+                                <span class="font-black text-slate-700">電源供應器 PSU</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="pc-psu" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <div class="flex-1 min-w-0"><span class="spec-main-name">Lian Li EDGE 850W</span></div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="price-badge">NT$ 4,890</div>
+                                        <button onclick="openPurchaseModal('Lian Li EDGE 850W', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy81cTNzTW91TTYz', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL09wUnR2enI3')" class="buy-btn">
+                                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <span class="spec-sub-detail">80+ 金牌認證 / 全模組化 / 白色</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('pc-case', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-slate-700"><i data-lucide="box"></i></div>
+                                <span class="font-black text-slate-700">電腦機殼 Case</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="pc-case" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <div class="flex-1 min-w-0"><span class="spec-main-name">Lian Li O11 Dynamic EVO RGB</span></div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="price-badge">NT$ 5,100</div>
+                                        <button onclick="openPurchaseModal('Lian Li O11 Dynamic EVO RGB', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy85QUtLS3k3akVM', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL3VsZVFjN3N5')" class="buy-btn">
+                                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <span class="spec-sub-detail">RBG全透海景房 / 鋼化玻璃 / 白色</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('pc-acc', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-pink-500"><i data-lucide="sparkles"></i></div>
+                                <span class="font-black text-slate-700">改裝配件 Modding</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="pc-acc" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="mb-4">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">ROG Herculx Graphics Card Holder</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 1,380</div>
+                                            <button onclick="openPurchaseModal('ROG Herculx 顯示卡支撐架', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy84S2xETFQxOWpG', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL2lRbHE1eHVu')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">RGB顯示卡支撐架 / 附水平儀 / 2段式高度調整 / 白色</span>
+                                </div>
+                                <div class="pt-4 border-t border-slate-200/50">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">Lian Li Strimer Wireless</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 3,100</div>
+                                            <button onclick="openPurchaseModal('Lian Li Strimer Wireless', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy9BS1dIakFKR0g0', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL1lYQVp3RTRJ')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">RGB線材 / CPU 2x8pin + 主機板 24pin</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('pc-sys', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-blue-400"><i data-lucide="hard-drive-download"></i></div>
+                                <span class="font-black text-slate-700">軟體與系統 Software</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="pc-sys" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <div class="flex-1 min-w-0"><span class="spec-main-name">Windows 11 Home<br>家用彩盒版</span></div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="price-badge">NT$ 4,290</div>
+                                        <button onclick="openPurchaseModal('Windows 11 Home 家用彩盒版', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy8zQjM3Q2FlWEZ1', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL3ZXdUZTQ1Zj')" class="buy-btn">
+                                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <span class="spec-sub-detail">64位元 / 正版系統 / 終身更新</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==============================================================
+                     2. 操控周邊清單 (Peripheral)
+                     ============================================================== -->
+                <div id="pane-peri" class="tab-pane hidden w-full max-w-[520px]">
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('peri-mon', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-blue-600"><i data-lucide="monitor"></i></div>
+                                <span class="font-black text-slate-700">主顯示器 Display</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="peri-mon" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <div class="flex-1 min-w-0"><span class="spec-main-name">ASUS TUF Gaming VG27AQL3A-W</span></div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="price-badge">NT$ 5,988</div>
+                                        <button onclick="openPurchaseModal('ASUS TUF Gaming VG27AQL3A-W', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy9BS1dIakJrNTRT', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zLzc4ZHBPTDNT')" class="buy-btn">
+                                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <span class="spec-sub-detail">27吋 / 2K 180Hz / 白色</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('peri-sub', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-cyan-400"><i data-lucide="tv"></i></div>
+                                <span class="font-black text-slate-700">副螢幕 Sub-Screen</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="peri-sub" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <div class="flex-1 min-w-0"><span class="spec-main-name">ACER S221HQL</span></div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="price-badge">NT$ --</div>
+                                        <div class="status-badge pointer-events-none">已停產</div>
+                                    </div>
+                                </div>
+                                <span class="spec-sub-detail">10年前的老螢幕 / 21.5吋 / FHD</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('peri-monitor-screen', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-sky-400"><i data-lucide="activity"></i></div>
+                                <span class="font-black text-slate-700">監控螢幕 Monitoring Screen</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="peri-monitor-screen" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <div class="flex-1 min-w-0"><span class="spec-main-name">LIANLI 8.8吋 IPS LCD</span></div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="price-badge">NT$ 2,290</div>
+                                        <button onclick="openPurchaseModal('LIANLI 8.8吋 IPS LCD', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy84MDhNd3haZ0VY', '')" class="buy-btn">
+                                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <span class="spec-sub-detail">硬體監測專用副屏 / 1920x480 / 白色</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('peri-kb', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-emerald-500"><i data-lucide="keyboard"></i></div>
+                                <span class="font-black text-slate-700">機械鍵盤 Keyboard</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="peri-kb" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <div class="flex-1 min-w-0"><span class="spec-main-name">ROG Strix Scope II 96 Wireless</span></div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="price-badge">NT$ 5,990</div>
+                                        <button onclick="openPurchaseModal('ROG Strix Scope II 96 Wireless', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy8zQjM3QzhHZUY1', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL21NamVhWEky')" class="buy-btn">
+                                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <span class="spec-sub-detail">三模無線 / 96% 配置 / 青軸 / 白色</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('peri-mouse', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-emerald-600"><i data-lucide="mouse"></i></div>
+                                <span class="font-black text-slate-700">電競滑鼠 Mouse</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="peri-mouse" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <div class="flex-1 min-w-0"><span class="spec-main-name">Logitech G502 X PLUS</span></div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="price-badge">NT$ 3,990</div>
+                                        <button onclick="openPurchaseModal('Logitech G502 X PLUS', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy8yTFUwQ2Z3RE40', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL3dqYmpmcEZu')" class="buy-btn">
+                                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <span class="spec-sub-detail">雙滾輪模式 / 自定義鍵x5 / LIGHTSPEED / 白色</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('peri-audio', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-purple-500"><i data-lucide="headphones"></i></div>
+                                <span class="font-black text-slate-700">音訊設備 Audio</span>
+                            </div>
+                            <i data-lucide="chevron-right" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="peri-audio" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="mb-4">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">Logitech G522 LIGHTSPEED</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 4,990</div>
+                                            <button onclick="openPurchaseModal('Logitech G522 LIGHTSPEED', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy80QXZlT0hpcGZR', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zLzBGZzR0bzl3')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">三模無線遊戲耳機 / LIGHTSYNC RGB / Blue VO!CE / 白色</span>
+                                </div>
+                                <div class="pt-4 border-t border-slate-200/50">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">Edifier QR30</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 3,410</div>
+                                            <button onclick="openPurchaseModal('Edifier QR30', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy8xMHljY1ZLR3dI', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zLzZlbmxadHhx')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">三模音響 / 2.0聲道 / 30W / 鏡面燈效 / 白色</span>
+                                </div>
+                                <div class="pt-4 border-t border-slate-200/50">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">FIFINE K688</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 2,990</div>
+                                            <button onclick="openPurchaseModal('FIFINE K688', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy82cHhIdFN3WTNa', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL0NtMklZVnJN')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">動圈式麥克風 / 雙模 USB & XLR / 白色</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==============================================================
+                     3. 空間環境清單 (Environment)
+                     ============================================================== -->
+                <div id="pane-env" class="tab-pane hidden w-full max-w-[520px]">
+                    
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('env-stand', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-slate-500"><i data-lucide="maximize"></i></div>
+                                <span class="font-black text-slate-700">螢幕支架 Stand</span>
+                            </div>
+                            <i data-lucide="chevron-right" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="env-stand" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="mb-4">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">Raymii LS-106-M2</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 5,699</div>
+                                            <button onclick="openPurchaseModal('Raymii LS-106-M2', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy81VVIxeU9RUm02', '')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">氣壓式雙螢幕支架 / USB & TYPE-C充電底座 / 承重27KG / 白色</span>
+                                </div>
+                                <div class="pt-4 border-t border-slate-200/50">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">Raymii LTA-13</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 1,890</div>
+                                            <button onclick="openPurchaseModal('Raymii LTA-13', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy80TEZ3dUZhamxS', '')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">鋁合金麥克風支架 / 動態RGB / 三節式調節 / 白色</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('env-light', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-yellow-500"><i data-lucide="lightbulb"></i></div>
+                                <span class="font-black text-slate-700">環境光源 Lighting</span>
+                            </div>
+                            <i data-lucide="chevron-right" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="env-light" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <div class="flex-1 min-w-0"><span class="spec-main-name">BenQ ScreenBar Pro</span></div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="price-badge">NT$ 4,290</div>
+                                        <button onclick="openPurchaseModal('BenQ ScreenBar Pro', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy8zZnpObXhxUjJx', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL2VtTjZoMWdL')" class="buy-btn">
+                                            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <span class="spec-sub-detail">螢幕掛燈 / 入席偵測 / 自適應調光 / 銀色</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('env-room', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-amber-500"><i data-lucide="layout"></i></div>
+                                <span class="font-black text-slate-700">空間家具 Furniture</span>
+                            </div>
+                            <i data-lucide="chevron-right" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="env-room" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="mb-4">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">電動升降桌</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 3,000</div>
+                                            <button onclick="openPurchaseModal('電動升降桌', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy8zZzBFVUQ1bW12', '')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">三段兩節 / 120cm桌面 / 靜音雙馬達</span>
+                                </div>
+                                <div class="pt-4 border-t border-slate-200/50">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">人體工學椅</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 1,000</div>
+                                            <button onclick="openPurchaseModal('人體工學椅', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy81ZmtTQjk2MnZs', 'obf:aHR0cHM6Ly9zLm1vbW9zaG9wLmNvbS50dy9zL1RqbkdQTzNR')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">透氣網布 / 腰撐系統 / 白色</span>
+                                </div>
+                                <div class="pt-4 border-t border-slate-200/50">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">多功能收納邊櫃</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 400</div>
+                                            <button onclick="openPurchaseModal('多功能收納邊櫃', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy80TEZ2bkJJMjlD', '')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">16格 / 底層拉門 / 帶背板 / 120x60x24cm / 白色</span>
+                                </div>
+                                <div class="pt-4 border-t border-slate-200/50">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">海報相框</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 369</div>
+                                            <button onclick="openPurchaseModal('海報相框', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy80VlpORGRwN1Vn', '')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">鋁合金邊框 / 磁吸開合 / 拉絲紋 / 附無痕貼</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('env-desk', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-orange-400"><i data-lucide="mouse-pointer-2"></i></div>
+                                <span class="font-black text-slate-700">桌面配件 Desk Accessories</span>
+                            </div>
+                            <i data-lucide="chevron-right" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="env-desk" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="mb-4">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">鍵鼠桌墊</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 180</div>
+                                            <button onclick="openPurchaseModal('鍵鼠桌墊', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy8xZ0ZCaE9BdzEz', '')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">布質 / 底部防滑 / 70x30cm / 白色</span>
+                                </div>
+                                <div class="pt-4 border-t border-slate-200/50 mb-4">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">鍵鼠護腕</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 300</div>
+                                            <button onclick="openPurchaseModal('鍵鼠護腕', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy80QXdXZmEyaVR3', '')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">PU皮 / 底部防滑 / 白色</span>
+                                </div>
+                                <div class="pt-4 border-t border-slate-200/50">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">磁吸手機支架</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 290</div>
+                                            <button onclick="openPurchaseModal('磁吸手機支架', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy9BVXFhRVZNZXJN', '')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">MagSafe / 鋁合金支架 / 白色</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-strip">
+                        <div onclick="toggleAccordion('env-cable', this)" class="item-header">
+                            <div class="flex items-center gap-4">
+                                <div class="equip-icon-box text-slate-400"><i data-lucide="box-select"></i></div>
+                                <span class="font-black text-slate-700">理線配件 Cable</span>
+                            </div>
+                            <i data-lucide="chevron-right" class="chevron text-slate-300 w-5 h-5 transition-transform"></i>
+                        </div>
+                        <div id="env-cable" class="detail-panel">
+                            <div class="detail-content">
+                                <div class="mb-4">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">Raymii LSA-100</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 599</div>
+                                            <button onclick="openPurchaseModal('Raymii LSA-100', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy82TDA4eUtRSjNI', '')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">桌面下方理線槽 / 隱藏整理 / 白色</span>
+                                </div>
+                                <div class="pt-4 border-t border-slate-200/50">
+                                    <div class="flex justify-between items-start gap-2 mb-2">
+                                        <div class="flex-1 min-w-0"><span class="spec-main-name">磁吸充電線</span></div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="price-badge">NT$ 130</div>
+                                            <button onclick="openPurchaseModal('磁吸充電線', 'obf:aHR0cHM6Ly9zLnNob3BlZS50dy8yMHMyN0Y5TU13', '')" class="buy-btn">
+                                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="spec-sub-detail">Type-C / 65W / 尼龍編織</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="flex flex-wrap justify-center gap-4 mt-auto py-8 md:py-12 z-10">
+        <a href="https://www.twitch.tv/rainyfei" target="_blank" class="social-pill flex items-center p-3 rounded-full group" aria-label="Twitch">
+            <i data-lucide="twitch" class="w-9 h-9 text-[#9146FF]"></i><span class="label text-[#9146FF] text-base">Twitch</span>
+        </a>
+        <a href="https://www.youtube.com/@rainy.fei0u0" target="_blank" class="social-pill flex items-center p-3 rounded-full group" aria-label="YouTube">
+            <i data-lucide="youtube" class="w-9 h-9 text-[#FF0000]"></i><span class="label text-[#FF0000] text-base">YouTube</span>
+        </a>
+        <a href="https://www.instagram.com/rian.sy___/" target="_blank" class="social-pill flex items-center p-3 rounded-full group" aria-label="Instagram">
+            <i data-lucide="instagram" class="w-9 h-9 text-[#E4405F]"></i><span class="label text-[#E4405F] text-base">Instagram</span>
+        </a>
+        <a href="https://www.threads.com/@rian.sy___" target="_blank" class="social-pill threads-btn flex items-center p-3 rounded-full group" aria-label="Threads">
+            <i data-lucide="at-sign" class="w-9 h-9 text-black"></i><span class="label text-black text-base">Threads</span>
+        </a>
+    </div>
+
+    <div class="visitor-counter"><i data-lucide="users" class="w-3 h-3"></i><span>VISITORS: <span id="visit-count">Loading...</span></span></div>
+
+    <footer class="pb-12 z-10 transition-colors duration-500 text-center flex flex-col items-center gap-4">
+        <!-- 免責聲明觸發按鈕 -->
+        <button onclick="openDisclaimerModal()" class="disclaimer-link text-blue-500/80 hover:text-blue-400 text-[11px] font-bold tracking-[0.2em] transition-colors flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="info" class="w-3.5 h-3.5"></i> 網站免責聲明
+        </button>
+        <!-- 版權宣告 -->
+        <div class="text-slate-400 text-[10px] font-black tracking-[0.5em] uppercase opacity-50">
+            &copy; 2026 宋雨暘 STUDIO V6.6.0
+        </div>
+    </footer>
+
+    <!-- ==============================================================
+         免責聲明彈窗 (Disclaimer Modal)
+         ============================================================== -->
+    <div id="disclaimer-modal" class="fixed inset-0 z-[9999] flex items-end justify-center pointer-events-none opacity-0 transition-opacity duration-300">
+        <div id="disclaimer-backdrop" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm cursor-pointer" onclick="closeDisclaimerModal()"></div>
+        
+        <div id="disclaimer-content" class="relative w-full max-w-md bg-white/80 backdrop-blur-2xl border-t border-white/60 rounded-t-[2.5rem] p-8 transform translate-y-full transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) shadow-[0_-10px_40px_rgba(0,0,0,0.1)] max-h-[85vh] overflow-y-auto">
+            <div id="disclaimer-drag-handle" class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-6"></div>
+            
+            <h3 class="text-center font-black text-xl text-slate-800 mb-6">網站免責與純分享聲明</h3>
+            
+            <div class="text-[0.9rem] text-slate-600 space-y-4 leading-relaxed font-medium text-justify tracking-wide">
+                <p>本網站的電腦菜單與空間配置，純粹是我的<span class="font-bold text-slate-800">個人生活紀錄</span>與<span class="font-bold text-slate-800">愛用清單分享</span>。</p>
+                <p>清單上所標示的價格皆為<span class="font-bold text-blue-500">「我當初購買時的價格」</span>，隨著時間推移或檔期活動，實際售價可能會有所變動，因此<span class="font-bold text-slate-800">數字僅供大家參考</span>唷！</p>
+                <p>此外，本站<span class="font-bold text-slate-800">並未參與任何商品的實際販售與交易</span>。若您對清單中的配備感興趣，建議購買前務必多方評估。</p>
+                <p>對於商品的<span class="font-bold text-slate-800">實際品質、後續保固及物流</span>等問題，本站<span class="font-bold text-slate-800">不負任何擔保與連帶責任</span>。</p>
+                <div class="text-center font-black text-slate-700 mt-6 py-3 bg-blue-50/50 rounded-2xl border border-blue-100/50 flex items-center justify-center gap-1.5">
+                    祝大家都能順利打造出理想的空間 <span>💙</span>
+                </div>
+            </div>
+            
+            <button id="disclaimer-btn-close" onclick="closeDisclaimerModal()" class="w-full mt-6 p-4 rounded-2xl bg-blue-50 text-blue-600 font-bold hover:bg-blue-100 transition-colors">我了解了</button>
+        </div>
+    </div>
+
+    <!-- ==============================================================
+         底部導購彈窗 (Bottom Sheet Modal)
+         ============================================================== -->
+    <div id="purchase-modal" class="fixed inset-0 z-[9999] flex items-end justify-center pointer-events-none opacity-0 transition-opacity duration-300">
+        <!-- 半透明遮罩 (點擊可關閉) -->
+        <div id="modal-backdrop" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm cursor-pointer" onclick="closePurchaseModal()"></div>
+        
+        <!-- 彈窗內容區 -->
+        <div id="modal-content" class="relative w-full max-w-md bg-white/80 backdrop-blur-2xl border-t border-white/60 rounded-t-[2.5rem] p-8 transform translate-y-full transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+            <!-- 頂部膠囊裝飾 (暗示可下拉) -->
+            <div id="modal-drag-handle" class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-6"></div>
+            
+            <h3 class="text-center font-black text-xl text-slate-800 mb-1">選擇購買平台</h3>
+            <p id="modal-item-name" class="text-center text-sm text-slate-500 font-bold mb-8">配備名稱</p>
+            
+            <div class="flex flex-col gap-4">
+                <!-- 蝦皮選項 -->
+                <a id="link-shopee" href="#" target="_blank" class="flex items-center justify-between p-4 rounded-2xl bg-white border border-orange-100 text-orange-500 font-bold hover:bg-orange-50 hover:shadow-lg hover:shadow-orange-500/20 transition-all group">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="shopping-bag" class="w-5 h-5"></i> 
+                        <span class="text-[1.05rem]">蝦皮購物 Shopee</span>
+                    </div>
+                    <i data-lucide="external-link" class="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity"></i>
+                </a>
+                
+                <!-- MOMO 選項 -->
+                <a id="link-momo" href="#" target="_blank" class="flex items-center justify-between p-4 rounded-2xl bg-white border border-pink-100 text-pink-500 font-bold hover:bg-pink-50 hover:shadow-lg hover:shadow-pink-500/20 transition-all group">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="store" class="w-5 h-5"></i> 
+                        <span class="text-[1.05rem]">MOMO 購物網</span>
+                    </div>
+                    <i data-lucide="external-link" class="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity"></i>
+                </a>
+
+                <!-- 已下架提示區塊 -->
+                <div id="modal-soldout-msg" style="display: none;" class="flex-col items-center justify-center p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                    <i data-lucide="package-x" class="w-8 h-8 text-slate-400 mb-2"></i>
+                    <span class="text-slate-500 font-bold mt-1">原商品已下架</span>
+                </div>
+            </div>
+            
+            <!-- 取消按鈕 -->
+            <button id="btn-cancel" onclick="closePurchaseModal()" class="w-full mt-6 p-4 rounded-2xl text-slate-400 font-bold hover:bg-slate-100 transition-colors">取消</button>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        window.addEventListener('scroll', () => {
+            const topBtn = document.getElementById('top-btn');
+            if (window.scrollY > 300) {
+                topBtn.classList.add('visible');
+            } else {
+                topBtn.classList.remove('visible');
+            }
+        });
+
+        const body = document.body;
+        const modeBtn = document.getElementById('mode-btn');
+        const modeText = modeBtn.querySelector('.mode-text');
+        let resizeTimeout;
+
+        function initTwitch() {
+            const channel = "rainyfei";
+            let hostname = window.location.hostname;
+            
+            if (!hostname || hostname === '') {
+                document.getElementById('twitch-embed').innerHTML = `
+                    <div class="flex flex-col items-center justify-center w-full h-full bg-slate-900 rounded-2xl border border-[#9146FF]/30 p-6 text-center">
+                        <i data-lucide="monitor-x" class="w-12 h-12 text-[#9146FF] mb-4"></i>
+                        <p class="font-bold text-white text-lg">目前為本地預覽模式</p>
+                        <p class="text-slate-400 text-sm mt-2">Twitch 畫面無法在本地資料夾中載入連線。<br>上傳發布至您的專屬網域後，即可正常顯示實況/離線畫面！</p>
+                    </div>
+                `;
+                if(window.lucide) lucide.createIcons();
+                return;
+            }
+
+            document.getElementById('twitch-embed').innerHTML = `
+                <iframe 
+                    src="https://player.twitch.tv/?channel=${channel}&parent=${hostname}&parent=localhost&parent=127.0.0.1&muted=true&autoplay=false" 
+                    height="100%" 
+                    width="100%" 
+                    allowfullscreen
+                    allow="autoplay; fullscreen; picture-in-picture; encrypted-media; popups"
+                    style="border:none;">
+                </iframe>
+            `;
+        }
+        
+        let twitchInitialized = false;
+
+        modeBtn.addEventListener('click', () => {
+            body.classList.toggle('twitch-mode');
+            if (body.classList.contains('twitch-mode')) {
+                modeText.innerText = '返回現實';
+                generateStardust();
+                if (!twitchInitialized) { initTwitch(); twitchInitialized = true; }
+            } else {
+                modeText.innerText = '戳一下試試看？';
+                generateMeteorRain();
+            }
+            lucide.createIcons();
+        });
+
+        function toggleMenu() {
+            const menu = document.getElementById('pc-menu-expandable');
+            const arrow = document.getElementById('menu-arrow');
+            const toggleWrapper = document.getElementById('toggle-all-wrapper');
+
+            menu.classList.toggle('expanded');
+            
+            if (menu.classList.contains('expanded')) {
+                arrow.style.transform = 'rotate(180deg)';
+                if(toggleWrapper) toggleWrapper.classList.add('show-btn');
+                setTimeout(() => {
+                    menu.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 300);
+            } else {
+                arrow.style.transform = 'rotate(0deg)';
+                if(toggleWrapper) toggleWrapper.classList.remove('show-btn');
+            }
+        }
+
+        function showTab(paneId) {
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('active');
+                pane.classList.add('hidden');
+            });
+
+            const targetPane = document.getElementById('pane-' + paneId);
+            if (targetPane) {
+                targetPane.classList.remove('hidden');
+                setTimeout(() => {
+                    targetPane.classList.add('active');
+                }, 20);
+            }
+            
+            document.querySelectorAll('.tab-pill').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const btnId = 'tab-' + paneId; 
+            const btn = document.getElementById(btnId);
+            if (btn) btn.classList.add('active');
+
+            const btnIcon = document.querySelector('#toggle-all-btn i, #toggle-all-btn svg');
+            if(btnIcon) {
+                const toggleBtn = document.getElementById('toggle-all-btn');
+                toggleBtn.innerHTML = '<i data-lucide="chevrons-up-down" class="w-5 h-5 mb-1"></i><span>展開全部</span>';
+                lucide.createIcons();
+                allExpanded = false;
+            }
+        }
+
+        function toggleAccordion(id, header) {
+            const panel = document.getElementById(id);
+            const chevron = header.querySelector('.chevron');
+            
+            if (panel.classList.contains('active')) {
+                panel.classList.remove('active');
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
+            } else {
+                panel.classList.add('active');
+                if (chevron) chevron.style.transform = 'rotate(90deg)';
+            }
+            void panel.offsetHeight; 
+        }
+
+        let allExpanded = false;
+        function toggleAllItems() {
+            const toggleBtnEl = document.getElementById('toggle-all-btn');
+            if (toggleBtnEl) toggleBtnEl.classList.remove('animate-[pulse_2s_ease-in-out_infinite]');
+
+            const activePane = document.querySelector('.tab-pane.active');
+            if (!activePane) return;
+            const panels = activePane.querySelectorAll('.detail-panel');
+            
+            const allActive = Array.from(panels).every(p => p.classList.contains('active'));
+            const actionExpand = !allActive;
+
+            panels.forEach((panel, index) => {
+                const chevron = panel.previousElementSibling.querySelector('.chevron');
+                if (actionExpand) { 
+                    panel.classList.add('active'); 
+                    if (chevron) chevron.style.transform = 'rotate(90deg)'; 
+                } else { 
+                    panel.classList.remove('active'); 
+                    if (chevron) chevron.style.transform = 'rotate(0deg)'; 
+                }
+            });
+            allExpanded = actionExpand;
+            
+            const toggleBtn = document.getElementById('toggle-all-btn');
+            if (actionExpand) {
+                toggleBtn.innerHTML = '<i data-lucide="fold-vertical" class="w-5 h-5 mb-1"></i><span>全部收合</span>';
+            } else {
+                toggleBtn.innerHTML = '<i data-lucide="chevrons-up-down" class="w-5 h-5 mb-1"></i><span>展開全部</span>';
+            }
+            lucide.createIcons();
+        }
+
+        /* 💡 Base64 解碼功能，確保亂碼網址能正常打開 */
+        function openPurchaseModal(itemName, shopeeRaw, momoRaw) {
+            const modal = document.getElementById('purchase-modal');
+            const content = document.getElementById('modal-content');
+            const nameEl = document.getElementById('modal-item-name');
+            const linkShopee = document.getElementById('link-shopee');
+            const linkMomo = document.getElementById('link-momo');
+            const soldoutMsg = document.getElementById('modal-soldout-msg');
+
+            nameEl.innerText = itemName;
+
+            // Base64 解碼器
+            const decodeLink = (str) => {
+                if (!str || str.includes('請填入')) return '';
+                if (str === 'soldout') return 'soldout';
+                if (str.startsWith('obf:')) {
+                    try { return atob(str.split('obf:')[1]); } 
+                    catch(e) { return ''; }
+                }
+                return str;
+            };
+
+            const shopeeUrl = decodeLink(shopeeRaw);
+            const momoUrl = decodeLink(momoRaw);
+
+            if (shopeeUrl === 'soldout' || momoUrl === 'soldout') {
+                linkShopee.style.display = 'none';
+                linkMomo.style.display = 'none';
+                if(soldoutMsg) soldoutMsg.style.display = 'flex';
+            } else {
+                if(soldoutMsg) soldoutMsg.style.display = 'none';
+
+                if(shopeeUrl && shopeeUrl !== '' && shopeeUrl !== '#') {
+                    linkShopee.href = shopeeUrl;
+                    linkShopee.style.display = 'flex';
+                } else {
+                    linkShopee.style.display = 'none';
+                }
+
+                if(momoUrl && momoUrl !== '' && momoUrl !== '#') {
+                    linkMomo.href = momoUrl;
+                    linkMomo.style.display = 'flex';
+                } else {
+                    linkMomo.style.display = 'none';
+                }
+            }
+
+            modal.classList.remove('pointer-events-none');
+            modal.classList.add('opacity-100');
+            setTimeout(() => {
+                content.style.transform = 'translateY(0)';
+            }, 10);
+            
+            if(window.lucide) lucide.createIcons(); 
+        }
+
+        function closePurchaseModal() {
+            const modal = document.getElementById('purchase-modal');
+            const content = document.getElementById('modal-content');
+
+            content.style.transform = 'translateY(100%)';
+            
+            setTimeout(() => {
+                modal.classList.remove('opacity-100');
+                modal.classList.add('pointer-events-none');
+            }, 400);
+        }
+
+        // --- 免責聲明彈窗邏輯 ---
+        function openDisclaimerModal() {
+            const modal = document.getElementById('disclaimer-modal');
+            const content = document.getElementById('disclaimer-content');
+            modal.classList.remove('pointer-events-none');
+            modal.classList.add('opacity-100');
+            setTimeout(() => {
+                content.style.transform = 'translateY(0)';
+            }, 10);
+        }
+
+        function closeDisclaimerModal() {
+            const modal = document.getElementById('disclaimer-modal');
+            const content = document.getElementById('disclaimer-content');
+            content.style.transform = 'translateY(100%)';
+            setTimeout(() => {
+                modal.classList.remove('opacity-100');
+                modal.classList.add('pointer-events-none');
+            }, 400);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const purchaseModal = document.getElementById('purchase-modal');
+                if (purchaseModal && purchaseModal.classList.contains('opacity-100')) {
+                    closePurchaseModal();
+                }
+                
+                const disclaimerModal = document.getElementById('disclaimer-modal');
+                if (disclaimerModal && disclaimerModal.classList.contains('opacity-100')) {
+                    closeDisclaimerModal();
+                }
+            }
+        });
+
+        function generateStardust() {
+            const layer = document.getElementById('stardust-layer');
+            layer.innerHTML = '';
+            for (let i = 0; i < 60; i++) {
+                const p = document.createElement('div');
+                p.className = 'digital-particle';
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.top = Math.random() * 100 + 'vh';
+                p.style.animationDuration = (Math.random() * 5 + 3) + 's';
+                p.style.animationDelay = Math.random() * 2 + 's';
+                const size = Math.random() * 4 + 3;
+                p.style.width = size + 'px'; p.style.height = size + 'px';
+                const isPurple = Math.random() > 0.5;
+                p.style.backgroundColor = isPurple ? '#d8b4fe' : '#a5f3fc';
+                p.style.boxShadow = isPurple ? '0 0 15px #9146FF' : '0 0 15px #00f0ff';
+                layer.appendChild(p);
+            }
+        }
+
+        function generateMeteorRain() {
+            const layer = document.getElementById('meteor-layer');
+            layer.innerHTML = '';
+            for (let i = 0; i < 30; i++) {
+                const meteor = document.createElement('div');
+                meteor.className = 'meteor'; 
+                meteor.style.left = (Math.random() * 150 - 25) + 'vw'; 
+                meteor.style.top = (Math.random() * 120 - 50) + 'vh'; 
+                meteor.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+                meteor.style.animationDelay = (Math.random() * 10) + 's';
+                layer.appendChild(meteor);
+            }
+        }
+
+        window.onload = () => {
+            generateMeteorRain();
+        };
+
+        window.onresize = () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (document.body.classList.contains('twitch-mode')) {
+                    generateStardust();
+                } else {
+                    generateMeteorRain();
+                }
+            }, 200);
+        };
+
+        // ==============================================================
+        // 🛡️ 基礎防護機制 (防君子不防小人)
+        // ==============================================================
+        
+        // 1. 禁用滑鼠右鍵
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        // 2. 禁用常見開發者工具快捷鍵
+        document.addEventListener('keydown', function(e) {
+            if(e.keyCode === 123) { e.preventDefault(); }
+            if(e.ctrlKey && e.shiftKey && e.keyCode === 73) { e.preventDefault(); }
+            if(e.ctrlKey && e.shiftKey && e.keyCode === 74) { e.preventDefault(); }
+            if(e.ctrlKey && e.keyCode === 85) { e.preventDefault(); }
+            if(e.ctrlKey && e.keyCode === 83) { e.preventDefault(); }
+        });
+    </script>
+</body>
+</html>
